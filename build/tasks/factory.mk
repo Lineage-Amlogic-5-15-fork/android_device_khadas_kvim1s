@@ -82,8 +82,11 @@ PRODUCT_INSTALL_OUT := $(PRODUCT_OUT)/aml_install
 PRODUCT_UPGRADE_OUT := $(PRODUCT_OUT)/aml_upgrade
 INSTALL_PACKAGE_CONFIG_FILE := $(PRODUCT_INSTALL_OUT)/image_install.cfg
 UPGRADE_PACKAGE_CONFIG_FILE := $(PRODUCT_UPGRADE_OUT)/image_upgrade.cfg
-AML_IMAGE_TOOL := $(FACTORY_PATH)/aml_image_v2_packer
-
+# Built from hardware/amlogic/tools/imagepacker (PRODUCT_HOST_PACKAGES in
+# device.mk) rather than the proprietary $(FACTORY_PATH)/aml_image_v2_packer
+# prebuilt. Packing needs -r2: the prebuilt emits v2 images, and the burner
+# expects the v2 item info layout, while -r would give a v1 image.
+AML_IMAGE_TOOL := $(HOST_OUT_EXECUTABLES)/aml_image_packer$(HOST_EXECUTABLE_SUFFIX)
 INSTALLED_AML_INSTALL_PACKAGE_TARGET := $(PRODUCT_OUT)/aml_install_package.img
 INSTALLED_AML_UPGRADE_PACKAGE_TARGET := $(PRODUCT_OUT)/aml_upgrade_package.img
 
@@ -147,7 +150,7 @@ endif
 	$(hide) $(call aml-copy-install-file, $(PRODUCT_OUT)/vbmeta_system.img)
 	$(hide) $(call aml-copy-install-file, $(PRODUCT_OUT)/vendor_boot.img)
 	$(hide) $(call aml-copy-install-file, $(PRODUCT_OUT)/misc.img)
-	$(hide) $(AML_IMAGE_TOOL) -r  $(PRODUCT_INSTALL_OUT)/image.cfg $(PRODUCT_INSTALL_OUT)/ $@
+	$(hide) $(AML_IMAGE_TOOL) -r2 $(PRODUCT_INSTALL_OUT)/image.cfg $(PRODUCT_INSTALL_OUT)/ $@
 	$(hide) rm -rf $(PRODUCT_INSTALL_OUT)
 	$(hide) echo " $@ created"
 
@@ -190,7 +193,7 @@ endif
 	$(hide) $(call aml-copy-upgrade-file, $(PRODUCT_OUT)/vbmeta.img)
 	$(hide) $(call aml-copy-upgrade-file, $(PRODUCT_OUT)/vbmeta_system.img)
 	$(hide) $(call aml-copy-upgrade-file, $(PRODUCT_OUT)/vendor_boot.img)
-	$(hide) $(AML_IMAGE_TOOL) -r  $(PRODUCT_UPGRADE_OUT)/image.cfg $(PRODUCT_UPGRADE_OUT)/ $@
+	$(hide) $(AML_IMAGE_TOOL) -r2 $(PRODUCT_UPGRADE_OUT)/image.cfg $(PRODUCT_UPGRADE_OUT)/ $@
 	$(hide) rm -rf $(PRODUCT_UPGRADE_OUT)
 	$(hide) echo " $@ created"
 
