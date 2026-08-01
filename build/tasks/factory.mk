@@ -99,12 +99,32 @@ define aml-copy-upgrade-file
 endef
 
 
+## misc
+# Both packages write every partition to slot A, so both have to reset the A/B
+# metadata as well - misc is what U-Boot reads to pick a slot (get_valid_slot in
+# cmd/amlogic/cmd_bootctl_vab.c derives active_slot/boot_part/slot-suffixes from
+# it on every boot, so nothing else needs fixing up). Without this a board that
+# an OTA has moved to slot B keeps booting _b after a factory flash, against
+# images that were all written to _a, and bootloops.
+#
+# The stock bootfiles/misc.img was 512 bytes, so it could not even reach the
+# bootloader_control at offset 2048; image_upgrade.cfg did not flash misc at all.
+# Both images are now 64 KiB, generated once by factory/gen_misc.py, and zero
+# everything but the control block - a factory flash has just replaced super, so
+# a leftover snapshot-merge state would describe partitions that no longer exist.
+#
+#   misc.img          slot A active, command="boot-recovery". The install
+#                     package writes super_empty.img, so it has to land in
+#                     recovery to get the logical partitions flashed.
+#   misc_upgrade.img  slot A active, no command - the upgrade package writes a
+#                     real super.img and should boot straight into Android.
 UPGRADE_IMAGES := \
     boot.img \
     dtb.img \
     dtbo.img \
     init_boot.img \
     logo.img \
+    misc_upgrade.img \
     oem.img \
     super_empty.img \
     super.img \
@@ -193,6 +213,7 @@ endif
 	$(hide) $(call aml-copy-upgrade-file, $(PRODUCT_OUT)/vbmeta.img)
 	$(hide) $(call aml-copy-upgrade-file, $(PRODUCT_OUT)/vbmeta_system.img)
 	$(hide) $(call aml-copy-upgrade-file, $(PRODUCT_OUT)/vendor_boot.img)
+	$(hide) $(call aml-copy-upgrade-file, $(PRODUCT_OUT)/misc_upgrade.img, misc.img)
 	$(hide) $(AML_IMAGE_TOOL) -r2 $(PRODUCT_UPGRADE_OUT)/image.cfg $(PRODUCT_UPGRADE_OUT)/ $@
 	$(hide) rm -rf $(PRODUCT_UPGRADE_OUT)
 	$(hide) echo " $@ created"
